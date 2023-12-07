@@ -25,13 +25,45 @@ main:
 
   loop:
 
-	addi t0, zero, 0b1000101
-	slli t0, t0, 16
-	addi t0, t0, 0b1010101110101110
-	; addi t0, zero, 1
+	addi s1, zero, 0b101
+	slli s1, s1, 16
+	addi s1, s1, 0b0001011000010101
+
+	add s2, zero, s1
+
     inner_loop:
-      beq t0, zero, main_end
-      addi t0, t0, -1
+	  ldw t1, BUTTON+4(zero)
+	  andi t1, t1, 1
+      beq s1, zero, main_end
+      addi s1, s1, -1
+	  
+	  beq t1, zero, inner_loop
+	  
+	  call spend_time
+	  stw zero, BUTTON+4(zero)
+
+	  ; t1 is the approximate time of button press execution
+	  addi t1, zero, 0b1011001
+	  slli t1, t1, 15
+	  addi t1, t1, 0b100110011010010
+
+	  ;s0 += t1 % t0 pure
+	  while:
+		cmpge t2, t1, s2
+	  	beq t2, zero, skip_while
+		sub t1, t1, s2
+		addi s0, s0, 1
+	    br while
+		
+	  skip_while:
+	  ;if t1 > s1 then s1 -= t1
+	  cmpge t2, s1, t1
+	  beq t2, zero, skip_sub
+	  sub s1, s1, t1
+	  skip_sub:
+
+	  ; t0 impure -= t1 / t0 pure
+
       br inner_loop
     main_end:
       addi s0, s0, 1
